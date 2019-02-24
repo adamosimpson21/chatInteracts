@@ -16,7 +16,7 @@ const options = {
     reconnect:true
   },
   identity:{
-    username: "",
+    username: "plot_twist_bot",
     password: process.env.PASSWORD
   },
   channels
