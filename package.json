@@ -1,0 +1,38 @@
+{
+  "name": "chatinteracts",
+  "version": "1.0.0",
+  "description": "Chat interacts with twitch stream",
+  "main": "index.js",
+  "dependencies": {
+    "dotenv": "^6.2.0",
+    "esm": "^3.2.6",
+    "jest": "^24.1.0",
+    "twitch-js": "^1.2.17"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/adamosimpson21/chatInteracts.git"
+  },
+  "keywords": [
+    "twitch",
+    "chat",
+    "game",
+    "gamedev",
+    "video",
+    "game",
+    "node",
+    "tmi",
+    "user",
+    "experience"
+  ],
+  "author": "BandsWithLegends",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/adamosimpson21/chatInteracts/issues"
+  },
+  "homepage": "https://github.com/adamosimpson21/chatInteracts#readme"
+}
