@@ -60,18 +60,52 @@ const initializePlayer = (userstate, channel)=> {
   }
 }
 
-const processWhisper = player => {
-  switch(players[username].status){
+const chooseFaction = (player, message) => {
+  client.whisper(player.username, setUpWhisper(player.username.bits))
+  player.status='faction'
+}
+
+const chooseStats = (player, message) => {
+  if(message.includes('food')){
+    player.makeFriend = true;
+    player.status = 'stats'
+    client.whisper(player.username, statsWhisper)
+  } else if(message.includes('invader')) {
+    player.makeFriend = false;
+    player.status = 'stats';
+    client.whisper(player.username, statsWhisper)
+  } else {
+    client.whisper(player.username, setUpWhisper(player.username.bits))
+  }
+}
+
+const finishCreature = (player, message) => {
+  if(verifyStats(player)){
+    createMonster(player)
+  } else {
+    client.whisper(player.username, overBudgetWhisper(player.bits));
+    chooseStats(player,message);
+  }
+}
+
+const processWhisper = (player, message) => {
+  switch(player.status){
     case 'new':
+      chooseFaction(player,message);
       break;
-    case '':
+    case 'faction':
+      chooseStats(player,message);
+      break;
+    case 'stats':
+      finishCreature(player,message);
       break;
     default:
+      client.whisper(player.username, goofWhisper)
       break;
   }
 }
 
-client.on("connected", function (address, port) {
+client.on("connected", (address, port) => {
   // client.whisper(myUserName, `Connected on ${address} ${port}`)
 });
 
@@ -86,15 +120,15 @@ client.on("chat", (channel, userstate, message, self) => {
 
 client.on("cheer", (channel, userstate, message) => {
   message = message.toLowerCase();
-  if(self) return;
   if(message.includes("!play")){
     initializePlayer(userstate, channel)
   }
 });
 
-client.on("whisper", function(from, userstate, message, self){
+client.on("whisper", (from, userstate, message, self) =>{
   if(self) return;
-  processWhisper(userstate.username)
+  message = message.toLowerCase();
+  processWhisper(userstate.username, message)
 })
 
 const verifyStats = player => {
