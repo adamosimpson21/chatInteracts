@@ -30,49 +30,52 @@ let players = {};
 const defaultChatter= {
   username:undefined,
   channel:undefined,
+  // whether a player is creating a friend or foe for the given game
   makeFriend: true,
   bits:5,
+  // these numbers should be less than bits to be within budget
   health: 0,
   attack: 0,
   speed: 0,
+  // status is what steps a player has finished. They include new, faction, stats, done
   status: 'new',
 }
 
-const introWhisper = "Thanks for joining in the game. Follow my whispers to create a creature in the game";
+const introWhisper = 'Thanks for joining in the game. Whisper me "new" to start';
 const welcomeBackWhisper = "Ready to make another creature?";
 const setUpWhisper = (numBits=5) => `Your budget for stats is ${numBits} bits. Cheer with bits for more power. Whisper "food" to help the streamer or "invader" to attack them.`;
 const statsWhisper = "Choose Health, Attack, and Speed for your creature. Use numbers that add up to your budget, separated by commas. Ex: 3,1,1 for high health. 0,5,0 for extreme attack";
 const overBudgetWhisper = numBits => `Sorry! Your creature is too powerful. You are over budget by ${numBits} bits`;
 const goofWhisper = "Sorry! I didn't understand your message. Please review the instructions and try again";
 
-const initializePlayer = (userstate, channel)=> {
+const initializePlayer = (userstate, channel = 'undefined')=> {
   // userstate.bits contains # of bits
   const {username} = userstate;
   if(!players.username){
-    players.username = {...defaultChatter, username, channel};
-    players.username.bits = userstate.bits ? userstate.bits : 5;
+    players[username] = {...defaultChatter, username, channel};
+    players[username].bits = userstate.bits ? userstate.bits : 5;
     client.whisper(username, introWhisper)
   } else if (players.username.status==='done'){
-    players.username.status = 'new';
+    players[username].status = 'new';
     client.whisper(username, welcomeBackWhisper);
   } else {
     processWhisper(username);
   }
 }
 
-const chooseFaction = (player, message) => {
-  client.whisper(player.username, setUpWhisper(player.username.bits))
-  player.status='faction'
+const chooseStats = (player, message) => {
+  client.whisper(player.username, "nothing yet")
+  player.status='stats'
 }
 
-const chooseStats = (player, message) => {
+const chooseFaction = (player, message) => {
   if(message.includes('food')){
     player.makeFriend = true;
-    player.status = 'stats'
+    player.status = 'faction'
     client.whisper(player.username, statsWhisper)
   } else if(message.includes('invader')) {
     player.makeFriend = false;
-    player.status = 'stats';
+    player.status = 'faction';
     client.whisper(player.username, statsWhisper)
   } else {
     client.whisper(player.username, setUpWhisper(player.username.bits))
@@ -82,6 +85,7 @@ const chooseStats = (player, message) => {
 const finishCreature = (player, message) => {
   if(verifyStats(player)){
     createMonster(player)
+    player.status = 'done';
   } else {
     client.whisper(player.username, overBudgetWhisper(player.bits));
     chooseStats(player,message);
@@ -128,7 +132,11 @@ client.on("cheer", (channel, userstate, message) => {
 client.on("whisper", (from, userstate, message, self) =>{
   if(self) return;
   message = message.toLowerCase();
-  processWhisper(userstate.username, message)
+  if(players[userstate.username]){
+    processWhisper(players[userstate.username], message)
+  } else {
+    initializePlayer(userstate)
+  }
 })
 
 const verifyStats = player => {
