@@ -145,7 +145,7 @@ const verifyStats = player => {
   const statsAreNumbers =  Number.isInteger(health) &&
                       Number.isInteger(attack) &&
                       Number.isInteger(speed) &&
-                      Number.isInteger(bits)
+                      Number.isInteger(bits);
   if(statsAreNumbers){
     return bits <= (health + attack + speed)
   }
