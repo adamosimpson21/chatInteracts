@@ -45,7 +45,7 @@ const introWhisper = 'Thanks for joining in the game. Whisper me "new" to start'
 const welcomeBackWhisper = "Ready to make another creature?";
 const setUpWhisper = (numBits=5) => `Your budget for stats is ${numBits} bits. Cheer with bits for more power. Whisper "food" to help the streamer or "invader" to attack them.`;
 const statsWhisper = "Choose Health, Attack, and Speed for your creature. Use numbers that add up to your budget, separated by commas. Ex: 3,1,1 for high health. 0,5,0 for extreme attack";
-const overBudgetWhisper = numBits => `Sorry! Your creature is too powerful. You are over budget by ${numBits} bits`;
+const overBudgetWhisper = numBits => `Sorry! Your creature is too powerful or I couldn't understand your message. You are over budget by ${numBits} bits`;
 const goofWhisper = "Sorry! I didn't understand your message. Please review the instructions and try again";
 
 const initializePlayer = (userstate, channel = 'undefined')=> {
@@ -64,8 +64,19 @@ const initializePlayer = (userstate, channel = 'undefined')=> {
 }
 
 const chooseStats = (player, message) => {
-  client.whisper(player.username, "nothing yet")
-  player.status='stats'
+  const msgArray = message.split(",").map(num => parseInt(num, 10));
+  const verifyResults = verifyStats(player, msgArray)
+  if(verifyResults.verified){
+    console.log("you are here: ", verifyResults);
+    player.health = msgArray[0];
+    player.attack = msgArray[1];
+    player.speed = msgArray[2];
+    player.status='stats'
+    console.log("player:", player);
+    finishCreature(player, message);
+  } else {
+    client.whisper(player.username, verifyResults.message);
+  }
 }
 
 const chooseFaction = (player, message) => {
@@ -82,13 +93,24 @@ const chooseFaction = (player, message) => {
   }
 }
 
-const finishCreature = (player, message) => {
-  if(verifyStats(player)){
-    createMonster(player)
-    player.status = 'done';
+chooseChannel = (player, message) => {
+  if(!player.channel){
+    player.channel = message.split(" ")[0];
+    player.status = 'stats';
+    finishCreature(player, message)
   } else {
-    client.whisper(player.username, overBudgetWhisper(player.bits));
-    chooseStats(player,message);
+    finishCreature(player, message)
+  }
+}
+
+const finishCreature = (player, message) => {
+  const verifyResults = verifyStats(player)
+  if(verifyResults.verified){
+    createMonster(player);
+    player.status = 'done';
+    console.log("player is done:", player);
+  } else {
+    client.whisper(player.username, verifyResults.message);
   }
 }
 
@@ -103,6 +125,13 @@ const processWhisper = (player, message) => {
     case 'stats':
       finishCreature(player,message);
       break;
+    case 'channel':
+      chooseChannel(player, message)
+      break;
+    case 'done':
+      player.status = 'new';
+      processWhisper(player, message);
+      break;
     default:
       client.whisper(player.username, goofWhisper)
       break;
@@ -110,7 +139,7 @@ const processWhisper = (player, message) => {
 }
 
 client.on("connected", (address, port) => {
-  // client.whisper(myUserName, `Connected on ${address} ${port}`)
+  client.whisper(myUserName, `Connected on ${address} ${port}`)
 });
 
 client.on("chat", (channel, userstate, message, self) => {
@@ -139,17 +168,38 @@ client.on("whisper", (from, userstate, message, self) =>{
   }
 })
 
-const verifyStats = player => {
-  const {health, attack, speed, bits} = player
-//  takes in a chatter object and returns true if their creature stats are valid (within range + budget)
+const verifyStats = (player, msgArray = []) => {
+  const {bits, channel} = player;
+  // TODO: if user does not put in numbers here, weird things happen
+  const health = msgArray[0] || player.health;
+  const attack = msgArray[1] || player.attack;
+  const speed = msgArray[2] || player.speed;
+  //  takes in a chatter object and returns true if their creature stats are valid (within range + budget)
   const statsAreNumbers =  Number.isInteger(health) &&
                       Number.isInteger(attack) &&
                       Number.isInteger(speed) &&
                       Number.isInteger(bits);
-  if(statsAreNumbers){
-    return bits <= (health + attack + speed)
+
+  const statsArePositive =  (health>=0) &&
+                            (attack>=0) &&
+                            (speed>=0) &&
+                            (bits>=0);
+  if(!channel){
+    player.status = "channel"
+    return {verified:false, message:"Channel not verified. Respond to this message with the stream you'd like to interact with"}
   }
-  return false;
+
+  if(statsAreNumbers && statsArePositive){
+    if(bits >= (health + attack + speed)){
+      return {verified:true}
+    }
+    return { verified:false, message:`Over budget by ${(health + attack + speed) - bits} bits`}
+  } else if(!statsAreNumbers){
+    return { verified:false, message:"Some stats are not readable as numbers"}
+  } else if(!statsArePositive){
+    return { verified:false, message:"Some stats are negative"}
+  }
+  return {verified:false, message:"Unknown verification Error"}
 }
 
 // This will eventually live somewhere in plot_twist
