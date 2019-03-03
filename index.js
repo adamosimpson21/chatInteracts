@@ -41,10 +41,10 @@ const defaultChatter= {
   status: 'new',
 }
 
-const welcomeBackWhisper = "Ready to make another creature?";
+const welcomeBackWhisper = "Ready to make another creature? Let's do it!";
 const introWhisper = 'Thanks for joining in the game. Whisper me "new" to start';
 const goofWhisper = "Sorry! I didn't understand your message. Please review the instructions and try again";
-const overBudgetWhisper = numBits => `Sorry! Your creature is too powerful or I couldn't understand your message. You are over budget by ${numBits} bits`;
+const overBudgetWhisper = numBits => `Sorry! Your creature is too powerful. You are over budget by ${numBits} bits`;
 const setUpWhisper = (numBits=5) => `Your budget for stats is ${numBits} bits. Cheer with bits for more power. Whisper "food" to help the streamer or "invader" to attack them.`;
 const statsWhisper = "Choose Health, Attack, and Speed for your creature. Use numbers that add up to your budget, separated by commas. Ex: 3,1,1 for high health. 0,5,0 for extreme attack";
 
@@ -193,7 +193,7 @@ const verifyStats = (player, msgArray = []) => {
     if(bits >= (health + attack + speed)){
       return {verified:true}
     }
-    return { verified:false, message:`Over budget by ${(health + attack + speed) - bits} bits`}
+    return { verified:false, message:overBudgetWhisper(health + attack + speed)}
   } else if(!statsAreNumbers){
     return { verified:false, message:"Some stats are not readable as numbers"}
   } else if(!statsArePositive){
