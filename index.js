@@ -63,6 +63,7 @@ const initializePlayer = (userstate, channel = 'undefined')=> {
   }
 }
 
+
 const chooseStats = (player, message) => {
   const msgArray = message.split(",").map(num => parseInt(num, 10));
   const verifyResults = verifyStats(player, msgArray)
